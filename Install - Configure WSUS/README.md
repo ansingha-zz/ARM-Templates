@@ -29,6 +29,10 @@ This is a template to provision a new Azure VM with WSUS role using 'custom scri
 
 •	The 'Custom Script Extension' PowerShell file is stored in a Block Blob in a dedicated storage account
 
+•       WSUS syncronization is done from 'Microsoft Update' 4 times in a day
+
+
+
 
 
 
