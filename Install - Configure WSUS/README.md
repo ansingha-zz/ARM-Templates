@@ -2,6 +2,7 @@
 
 
 This is a template to provision a new Azure VM with WSUS role using 'custom script extension' in a pre-existing VNet.
+
 •	VM Size: Standard D1 v2
 
 •	It has a single NIC
