@@ -5,13 +5,13 @@
     "AdminPassword": {
       "type": "securestring",
       "metadata": {
-        "description": "Please provide the admin user's password to login to the VM"
+        "description": "Admin user's password to login to the VM"
       }
     },
     "AdminUsername": {
       "type": "string",
       "metadata": {
-        "description": "Please provide the admin Username to login to the VM"
+        "description": "Admin Username to login to the VM"
       }
     },
     "customScriptFileToRun": {
@@ -33,7 +33,7 @@
     "sasToken": {
       "type": "securestring",
       "metadata": {
-        "description": "Please provide SAS Token of the storage account where custom scripts are uploaded"
+        "description": "SAS Token of the storage account where custom scripts are uploaded"
       }
     },
     "VMStorageAccountName": {
