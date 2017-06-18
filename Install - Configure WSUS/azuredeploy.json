@@ -1,0 +1,259 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "AdminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Please provide the admin user's password to login to the VM"
+      }
+    },
+    "AdminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "Please provide the admin Username to login to the VM"
+      }
+    },
+    "customScriptFileToRun": {
+      "type": "string",
+      "defaultValue": "InstallWSUS.ps1",
+      "metadata": {
+        "description": "Name of the script to be run to install WSUS role"
+      }
+    },
+    "customScriptStorageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of Azure Storage Account where the custom script is located"
+      }
+    },
+    "existingVirtualNetworkName": {
+      "type": "string"
+    },
+    "sasToken": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Please provide SAS Token of the storage account where custom scripts are uploaded"
+      }
+    },
+    "VMStorageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of Azure Storage Account associated with the VM"
+      }
+    },
+    "SyncHours": {
+      "type": "string",
+      "metadata": {
+        "description": "The schedule for the daily sync in Hours"
+      }
+    },
+    "SyncMinutes": {
+      "type": "string",
+      "metadata": {
+        "description": "The schedule for the daily sync in Minutes"
+      }
+    },
+    "workspaceName": {
+      "type": "string",
+      "metadata": {
+        "description": "OMS workspace Name"
+      }
+    },
+    "workspaceId": {
+      "type": "string",
+      "metadata": {
+        "description": "OMS workspace Id"
+      }
+    },
+    "workspaceKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "OMS workspace Key"
+      }
+    }
+  },
+  "variables": {
+    "vnetID": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.Network/virtualNetworks/', parameters('existingVirtualNetworkName'))]",
+    "virtualMachines_name": "[concat('Demo-', '-WSUS01')]",
+    "availabilitySets_name": "[concat('Demo-', '-AS-WSUS')]",
+    "networkInterfaces_name": "[concat(variables('virtualMachines_name') ,'-NIC01')]",
+    "subnetName": "Management",
+    "subnetRef": "[concat(variables('vnetID'),'/subnets/', variables('subnetName'))]",
+    "vmExtensionName_WSUS": "WSUS_Deployment",
+    "vmExtensionName_OMS": "OMS_Monitoring",
+    "commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File', ' ', parameters('customScriptFileToRun'), ' ','-SyncHours ','\"', parameters('SyncHours'),'\"', ' ', '-SyncMinutes ','\"', parameters('SyncMinutes'),'\"')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Compute/availabilitySets",
+      "name": "[variables('availabilitySets_name')]",
+      "apiVersion": "2016-04-30-preview",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "platformUpdateDomainCount": 5,
+        "platformFaultDomainCount": 2
+      },
+      "resources": [],
+      "dependsOn": []
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "name": "[variables('virtualMachines_name')]",
+      "apiVersion": "2016-04-30-preview",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "availabilitySet": {
+          "id": "[resourceId('Microsoft.Compute/availabilitySets', variables('availabilitySets_name'))]"
+        },
+        "hardwareProfile": {
+          "vmSize": "Standard_D1_v2"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "2012-R2-Datacenter",
+            "version": "latest"
+          },
+          "osDisk": {
+            "name": "[concat(variables('virtualMachines_name'), '-osdisk')]",
+            "createOption": "FromImage",
+            "vhd": {
+              "uri": "[concat('https', '://', parameters('VMStorageAccountName'), '.blob.core.windows.net', concat('/vhds/', variables('virtualMachines_name'),'-osdisk.vhd'))]"
+            },
+            "caching": "ReadWrite"
+          },
+          "dataDisks": [
+            {
+              "lun": 0,
+              "name": "[concat(variables('virtualMachines_name'),'-datadisk01')]",
+              "createOption": "Empty",
+              "vhd": {
+                "uri": "[concat('https', '://', parameters('VMStorageAccountName'), '.blob.core.windows.net', concat('/vhds/', variables('virtualMachines_name'),'-datadisk01.vhd'))]"
+              },
+              "caching": "None",
+              "diskSizeGB": "500"
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "[variables('virtualMachines_name')]",
+          "adminUsername": "[parameters('AdminUsername')]",
+          "adminPassword": "[parameters('AdminPassword')]",
+          "windowsConfiguration": {
+            "provisionVMAgent": true,
+            "enableAutomaticUpdates": true
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaces_name'))]"
+            }
+          ]
+        }
+      },
+      "resources": [
+      ],
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/availabilitySets', variables('availabilitySets_name'))]",
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaces_name'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('VMStorageAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[variables('networkInterfaces_name')]",
+      "apiVersion": "2016-03-30",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('subnetRef')]"
+              }
+            }
+          }
+        ],
+        "dnsSettings": {
+          "dnsServers": []
+        },
+        "enableIPForwarding": false
+      },
+      "resources": [],
+      "dependsOn": []
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "name": "[concat(variables('virtualMachines_name'),'/', variables('vmExtensionName_WSUS'))]",
+      "apiVersion": "2015-05-01-preview",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[concat('Microsoft.Compute/virtualMachines/', variables('virtualMachines_name'))]"
+      ],
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "CustomScriptExtension",
+        "typeHandlerVersion": "1.8",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "fileUris": [
+            "[parameters('sasToken')]"
+          ],
+          "timestamp": 201703271222
+        },
+        "protectedSettings": {
+          "commandToExecute": "[variables('commandToExecute')]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "name": "[concat(variables('virtualMachines_name'),'/', variables('vmExtensionName_OMS'))]",
+      "apiVersion": "2015-06-15",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[concat('Microsoft.Compute/virtualMachines/', variables('virtualMachines_name'))]"
+      ],
+        "properties":
+        {
+          "publisher": "Microsoft.EnterpriseCloud.Monitoring",
+          "type": "MicrosoftMonitoringAgent",
+          "typeHandlerVersion": "1.0",
+          "autoUpgradeMinorVersion": true,
+          "settings": {
+            "workspaceId": "[parameters('workspaceId')]"
+          },
+          "protectedSettings": {
+            "workspaceKey": "[parameters('workspaceKey')]"
+          }
+        }
+    },
+
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "sku": {
+        "name": "Standard_LRS",
+        "tier": "Standard"
+      },
+      "kind": "Storage",
+      "name": "[parameters('VMStorageAccountName')]",
+      "apiVersion": "2016-01-01",
+      "location": "[resourceGroup().location]",
+      "tags": {},
+      "properties": {},
+      "resources": [],
+      "dependsOn": []
+    }
+  ],
+  "outputs": {
+    "VMProperties": {
+      "value": "[reference(resourceId('Microsoft.Compute/virtualMachines', concat(variables('virtualMachines_name'))) )]",
+      "type": "object"
+    }
+  }
+}
