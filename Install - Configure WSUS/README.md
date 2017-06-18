@@ -7,8 +7,6 @@ This is a template to provision a new Azure VM with WSUS role using 'custom scri
 
 •	It has a single NIC
 
-•	Naming format for NIC is: <VM_name>-NIC01
-
 •	It does not have a public IP address
 
 •	Its connected to pre-provisioned VNET
@@ -19,8 +17,7 @@ This is a template to provision a new Azure VM with WSUS role using 'custom scri
 
 •	Additional Data Disk of 500GB size
 
-•	The disk is initialized using the ‘custom script extension’:
-        Disk Label: WSUS
+•	The disk is initialized using the ‘custom script extension’. Disk Label: WSUS
         
 •	A folder is created with the following name in the data disk for WSUS content: WSUSContent
 
