@@ -3,7 +3,7 @@
     Provision a VM with WSUS role
 
 .DESCRIPTION
-    Provision a VM, adds a 500 GB data disk and installs and configures WSUS role. It also adds the OMS extension to the VM.
+    Provisions a VM, adds a 500 GB data disk and installs and configures WSUS role. It also adds the OMS extension to the VM.
 #>
 
 param(
