@@ -12,7 +12,7 @@
     Provide Region where WSUS VM will be deployed
 
 .Parameter $ExistingVirtualNetworkName
-    Provide the existing Virtual Network names. Example: MAHSPR-AVN-EN244
+    Provide the existing Virtual Network names
 
 .Parameter $customScriptFileToRun
     Example: InstallWSUS.ps1
@@ -36,7 +36,7 @@
     Tag values for Resource Group
 
 .Parameter $ResourceGroupName
-    Provide name of the existing Resource Group which have the existing VNets. Example: MAHSPR<regioncode>-RGP-PF-CoreInfra-PrivateShared-00001
+    Provide name of the existing Resource Group which have the existing VNets
 
 .Parameter $VMStorageAccountName
 	Name of Azure Storage Account associated with the VM
@@ -103,7 +103,7 @@ $CSEContainerName,
 [PSCustomObject]
 $Tags,
 
-[Parameter(Mandatory=$True, HelpMessage="Provide name of the existing Resource Group which have the existing VNets. Example: MAHSPR<regioncode>-RGP-PF-CoreInfra-PrivateShared-00001")]
+[Parameter(Mandatory=$True, HelpMessage="Provide name of the existing Resource Group which have the existing VNets
 [string]
 $ResourceGroupName,
 
